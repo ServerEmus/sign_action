@@ -1,0 +1,57 @@
+name: 'Sign'
+description: 'Sign files with certificates'
+
+inputs:
+  file:
+    description: Files to sign
+    required: true
+    default: public
+  directory:
+    description: The current working directory
+    required: false
+    default: ${{ GITHUB_WORKSPACE }}
+secrets:
+  PFX:
+    description: Certificate file
+    required: true
+  Password:
+    description: Certificate password
+    required: true
+
+
+runs:
+  using: composite
+
+  steps:
+    # .NET is required
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '10.x'
+
+    # Install the code signing tool    
+    - name: Install Sign CLI tool
+      run: dotnet tool install --tool-path . --prerelease sign
+
+    - name: Write PFX to file
+      run: |
+        echo ${{ secrets.PFX }} >> CustomSign.fpx
+      shell: bash
+
+    - name: Get fingerprint
+      id: fingerprint
+      run: |
+        openssl pkcs12 -in CustomSign.pfx -passin pass:${{ secrets.Password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
+        sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
+        sed -i 's/://g' fingerprint.txt
+        cat fingerprint.txt >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Sign file
+      run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ secrets.Password }} -cfp ${{ steps.fingerprint.outputs.fingerprint }} -b {{ inputs.directory }}
+      shell: bash
+
+branding:
+  author: ServerEmus
+  color: black
+  icon: download
