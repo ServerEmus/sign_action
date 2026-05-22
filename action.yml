@@ -29,7 +29,7 @@ runs:
 
     # Install the code signing tool    
     - name: Install Sign CLI tool
-      run: dotnet tool install --tool-path . --prerelease sign
+      run: dotnet tool install -g --prerelease sign
       shell: bash
 
     - name: Write PFX to file
@@ -55,7 +55,7 @@ runs:
         certutil -decode CustomSign.b64.pfx CustomSign.pfx
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
-        cat fingerprint.txt >> "$GITHUB_OUTPUT"
+        Get-Content fingerprint.txt | Add-Content -Path $env:GITHUB_OUTPUT
       shell: pwsh
 
     - name: Sign file (WIN)
