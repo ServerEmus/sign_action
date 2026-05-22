@@ -41,6 +41,7 @@ runs:
       id: fingerprint-linux
       if: runner.os == 'Linux'
       run: |
+        sed '/-----/d' CustomSign.b64.fpx | base64 -d > CustomSign.fpx
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
@@ -50,7 +51,6 @@ runs:
       id: fingerprint-windows
       if: runner.os == 'Windows'
       run: |
-        sed '/-----/d' CustomSign.b64.fpx | base64 -d > CustomSign.fpx
         certutil -decode CustomSign.b64.fpx CustomSign.fpx
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
