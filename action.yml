@@ -56,12 +56,12 @@ runs:
 
     - name: Sign file (WIN)
       if: runner.os == 'Windows'
-      run: ./sign code certificate-store ${{ inputs.file }} -cf "${{ github.workspace }}\CustomSign.pfx" -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-windows.outputs.fingerprint }} -v Trace
+      run: ./sign code certificate-store ${{ inputs.file }} -cf "${{ github.workspace }}/CustomSign.pfx" -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-windows.outputs.fingerprint }} -v Trace
       shell: bash
 
     - name: Sign file (LIN)
       if: runner.os == 'Linux'
-      run: ./sign code certificate-store ${{ inputs.file }} -cf ${{ github.workspace }}\CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-linux.outputs.fingerprint }} -v Trace
+      run: ./sign code certificate-store ${{ inputs.file }} -cf ${{ github.workspace }}/CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-linux.outputs.fingerprint }} -v Trace
       shell: bash
 
 branding:
