@@ -5,11 +5,10 @@ inputs:
   file:
     description: Files to sign
     required: true
-    default: public
   directory:
     description: The current working directory
     required: false
-    default: ${{ GITHUB_WORKSPACE }}
+    default: ''
   certificate:
     description: Certificate file
     required: true
@@ -35,6 +34,7 @@ runs:
     - name: Write PFX to file
       run: |
         echo ${{ inputs.certificate }} >> CustomSign.b64.fpx
+      shell: bash
 
     - name: Get fingerprint
       id: fingerprint-linux
@@ -43,6 +43,7 @@ runs:
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
+      shell: pwsh
 
     - name: Get fingerprint
       id: fingerprint-windows
@@ -54,14 +55,17 @@ runs:
         sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
         sed -i 's/://g' fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
+      shell: bash
 
     - name: Sign file (WIN)
       if: runner.os == 'Windows'
       run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-windows.outputs.fingerprint }} -b {{ inputs.directory }}
+      shell: bash
 
     - name: Sign file (LIN)
       if: runner.os == 'Linux'
       run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-linux.outputs.fingerprint }} -b {{ inputs.directory }}
+      shell: bash
 
 branding:
   author: ServerEmus
