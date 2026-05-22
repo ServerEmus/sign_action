@@ -46,7 +46,7 @@ runs:
         sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
         sed -i 's/://g' fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
-      shell: pwsh
+      shell: bash
 
     - name: Get fingerprint
       id: fingerprint-windows
@@ -56,7 +56,7 @@ runs:
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
-      shell: bash
+      shell: pwsh
 
     - name: Sign file (WIN)
       if: runner.os == 'Windows'
