@@ -34,16 +34,17 @@ runs:
 
     - name: Write PFX to file
       run: |
-        printf '%s' '${{ inputs.certificate }}' > CustomSign.b64.fpx
+        printf '%s' '${{ inputs.certificate }}' > CustomSign.b64.pfx
       shell: bash
 
     - name: Get fingerprint
       id: fingerprint-linux
       if: runner.os == 'Linux'
       run: |
-        sed '/-----/d' CustomSign.b64.fpx | base64 -d > CustomSign.fpx
+        sed '/-----/d' CustomSign.b64.pfx | base64 -d > CustomSign.pfx
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
-        (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
+        sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
+        sed -i 's/://g' fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
       shell: pwsh
 
@@ -51,10 +52,9 @@ runs:
       id: fingerprint-windows
       if: runner.os == 'Windows'
       run: |
-        certutil -decode CustomSign.b64.fpx CustomSign.fpx
+        certutil -decode CustomSign.b64.pfx CustomSign.pfx
         openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
-        sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
-        sed -i 's/://g' fingerprint.txt
+        (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
       shell: bash
 
