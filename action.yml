@@ -10,11 +10,10 @@ inputs:
     description: The current working directory
     required: false
     default: ${{ GITHUB_WORKSPACE }}
-secrets:
-  PFX:
+  certificate:
     description: Certificate file
     required: true
-  Password:
+  password:
     description: Certificate password
     required: true
 
@@ -35,13 +34,13 @@ runs:
 
     - name: Write PFX to file
       run: |
-        echo ${{ secrets.PFX }} >> CustomSign.b64.fpx
+        echo ${{ inputs.certificate }} >> CustomSign.b64.fpx
 
     - name: Get fingerprint
       id: fingerprint-linux
       if: runner.os == 'Linux'
       run: |
-        openssl pkcs12 -in CustomSign.pfx -passin pass:${{ secrets.Password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
+        openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         (Get-Content fingerprint.txt) -replace 'SHA256 Fingerprint=', 'fingerprint=' -replace ':', '' -replace '\.', '' | Set-Content fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
 
@@ -51,18 +50,18 @@ runs:
       run: |
         sed '/-----/d' CustomSign.b64.fpx | base64 -d > CustomSign.fpx
         certutil -decode CustomSign.b64.fpx CustomSign.fpx
-        openssl pkcs12 -in CustomSign.pfx -passin pass:${{ secrets.Password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
+        openssl pkcs12 -in CustomSign.pfx -passin pass:${{ inputs.password }} -nokeys -clcerts | openssl x509 -noout -fingerprint -sha256 >> fingerprint.txt
         sed -i 's/sha256 Fingerprint=/fingerprint=/g' fingerprint.txt
         sed -i 's/://g' fingerprint.txt
         cat fingerprint.txt >> "$GITHUB_OUTPUT"
 
     - name: Sign file (WIN)
       if: runner.os == 'Windows'
-      run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ secrets.Password }} -cfp ${{ steps.fingerprint-windows.outputs.fingerprint }} -b {{ inputs.directory }}
+      run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-windows.outputs.fingerprint }} -b {{ inputs.directory }}
 
     - name: Sign file (LIN)
       if: runner.os == 'Linux'
-      run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ secrets.Password }} -cfp ${{ steps.fingerprint-linux.outputs.fingerprint }} -b {{ inputs.directory }}
+      run: sign code certificate-store ${{ inputs.file }} -cf CustomSign.pfx -p ${{ inputs.password }} -cfp ${{ steps.fingerprint-linux.outputs.fingerprint }} -b {{ inputs.directory }}
 
 branding:
   author: ServerEmus
