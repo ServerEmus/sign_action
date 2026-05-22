@@ -34,7 +34,7 @@ runs:
 
     - name: Write PFX to file
       run: |
-        echo ${{ inputs.certificate }} >> CustomSign.b64.fpx
+        printf '%s' '${{ inputs.certificate }}' > CustomSign.b64.fpx
       shell: bash
 
     - name: Get fingerprint
